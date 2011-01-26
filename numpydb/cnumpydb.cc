@@ -94,6 +94,7 @@ void NumpyDB::set_defaults() {
     mDataPrinter=NULL;
 
     // default to 512Mb of cache
+    // Not using this actually, code is commented out
     mCacheSizeGBytes = 0;
     mCacheSizeBytes = 512*1024*1024;
     mNCache = 1;
