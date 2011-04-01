@@ -386,6 +386,9 @@ class NumpyDB(cnumpydb.NumpyDB):
             >>> db.close()
         """
         cnumpydb.NumpyDB.close(self)
+    
+    def __del__(self):
+        self.close()
 
     def put(self, keys, values):
         """
