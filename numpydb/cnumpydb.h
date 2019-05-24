@@ -15,6 +15,8 @@
 // to handle references and conversions we need more flexibility than we get
 // with ordinary typed NumpyVector
 
+int *init_numpy(void);
+
 #include "NumpyVoidVector.h"
 
 
@@ -185,16 +187,16 @@ class NumpyDB {
 
         // Return python string for file name
         PyObject* file_name() {
-            PyObject* fname = PyString_FromString(mDBFile.c_str());
+            PyObject* fname = Py_BuildValue("s",mDBFile.c_str());
             return fname;
         }
         // Return python strings for dtypes
         PyObject* key_dtype() {
-            PyObject* dtype = PyString_FromString(mKeyDtypeStr.c_str());
+            PyObject* dtype = Py_BuildValue("s", mKeyDtypeStr.c_str());
             return dtype;
         }
         PyObject* data_dtype() {
-            PyObject* dtype = PyString_FromString(mDataDtypeStr.c_str());
+            PyObject* dtype = Py_BuildValue("s", mDataDtypeStr.c_str());
             return dtype;
         }
 

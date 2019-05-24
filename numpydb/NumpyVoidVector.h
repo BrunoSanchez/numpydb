@@ -1,101 +1,92 @@
 /*
- * NumpyVoidVector.h
- *
- * This is simple wrapper class for 1-d and scalar numpy arrays.  
- * The purpose of this class is to handle the reference counting
- * and to simplify creation of arrays from input descriptors.
- *
- * For explicitly typed vectors, use the NumpyVector class.
- *
- * This is a header-only class.  Simply include it and use.
- *
- * Examples:
- *    #include "NumpyVoidVector.h"
- *
- *    // creating a new vector of any type from a PyObject*
- *    NumpyVoidVector vec(obj);
- *
- *    //
- *    // Create from a type string
- *    //
- *
- *    // specifying length
- *    NumpyVoidVector vec("i4", 25);
- *    // converting the input object
- *    NumpyVoidVector vec("f8", [1.2,3.5,725.2]);
- *
- *    //
- *    // Create from a full numpy PyArray_Descr
- *    //
- *
- *    NumpyVoidVector vec(descr, obj);
- *    NumpyVoidVector vec(descr, 35);
- *
- *
- *
- *    // get a reference for returning to python.  Reference counting is
- *    // done correctly
- *
- *    PyObject* output = vec.getref();
- *    return output;
- *
- *
- *    // Get some info about the array
- *
- *    // The numpy type number
- *    int type_num = vec.type_num();
- *
- *    // the number of elements in the vector
- *    npy_intp nel = vec.size();
- *
- *    // the stride of the array
- *    npy_intp stride = vec.stride();
- *
- *    // Size of each element
- *    npy_intp itemsize = vec.item_size();
- *
- *
- *    // Access data in a way that is aware of strides
- *    void* p = vec.ptr();
- *
- *    // if we know the data are double...
- *    if (vec.type_num() == NPY_FLOAT64) {
- *        double* p = (double* ) vec.ptr();
- *    }
- *
- *    // get pointer to particular location.  This is stride-aware.
- *    void* p = vec.ptr(22);
- *
- *    // If we knew the data were float32
- *    for (npy_intp i=0; i<vec.size(); i++) {
- *        npy_float32* p = (npy_float32* ) vec.ptr(i);
- *        // do something interesting
- *    }
- *
- *
- *    // if you *know* the data are contiguous and of a given type, this 
- *    // is an easy and fast way to access the data.
- *    npy_float32* p = (npy_float32* )vec.ptr(); 
- *    for (npy_intp i=0; i<vec.size(); i++) {
- *        float32 val = *p;
- *        // do something
- *        ++p;
- *    }
- *
- *    // This is the fastest way to loop using strides.
- *    // in this example, we know the data type is int32
- *
- *    npy_int32* p = (npy_int32* ) vec.ptr();
- *    npy_intp stride = vec.stride();  // zero for scalars
- *    for (npy_intp i=0; i<vec.size(); i++) {
- *        npy_int32 val = *p;
- *        p = p + stride;
- *    }
- *
- *
- *
- *
- *   
+   NumpyVoidVector.h
+  
+   This is simple wrapper class for 1-d and scalar numpy arrays.  
+   The purpose of this class is to handle the reference counting
+   and to simplify creation of arrays from input descriptors.
+  
+   For explicitly typed vectors, use the NumpyVector class.
+  
+   This is a header-only class.  Simply include it and use.
+  
+   Examples:
+      #include "NumpyVoidVector.h"
+  
+      // creating a new vector of any type from a PyObject*
+      NumpyVoidVector vec(obj);
+  
+      //
+      // Create from a type string
+      //
+  
+      // specifying length
+      NumpyVoidVector vec("i4", 25);
+      // converting the input object
+      NumpyVoidVector vec("f8", [1.2,3.5,725.2]);
+  
+      //
+      // Create from a full numpy PyArray_Descr
+      //
+  
+      NumpyVoidVector vec(descr, obj);
+      NumpyVoidVector vec(descr, 35);
+  
+  
+  
+      // get a reference for returning to python.  Reference counting is
+      // done correctly
+  
+      PyObject* output = vec.getref();
+      return output;
+  
+  
+      // Get some info about the array
+  
+      // The numpy type number
+      int type_num = vec.type_num();
+  
+      // the number of elements in the vector
+      npy_intp nel = vec.size();
+  
+      // the stride of the array
+      npy_intp stride = vec.stride();
+  
+      // Size of each element
+      npy_intp itemsize = vec.item_size();
+  
+  
+      // Access data without knowledge of type
+      void* p = vec.ptr();
+  
+      // if we know the data are double...
+      if (vec.type_num() == NPY_FLOAT64) {
+          double* p = (double* ) vec.ptr();
+      }
+  
+      // get pointer to particular location.  This is stride-aware.
+      void* p = vec.ptr(22);
+  
+      // If we knew the data were float32
+      for (npy_intp i=0; i<vec.size(); i++) {
+          npy_float32* p = (npy_float32* ) vec.ptr(i);
+          // do something interesting
+      }
+  
+  
+      // This is the fastest way to loop using strides.
+      // in this example, we know the data type is int32
+      // use char* to hold the pointer, to avoid warnings
+      // from g++
+  
+      npy_intp stride = vec.stride();  // zero for scalars
+      char* p = (char*) vec.ptr();
+      for (npy_intp i=0; i<vec.size(); i++) {
+          npy_int32 val = *(npy_int32*) p;
+          p = p + stride;
+      }
+  
+  
+     
  */
 
 
@@ -107,6 +98,20 @@
 #include <sstream>
 #include <string>
 #include "numpy/arrayobject.h"
+
+/*
+#if PY_MAJOR_VERSION >= 3
+static int *init_numpy(void) {
+    import_array();
+    return NULL;
+}
+#else
+static void init_numpy(void) {
+    import_array();
+}
+#endif
+*/
+
 
 class NumpyVoidVector {
 	public:
@@ -122,7 +127,7 @@ class NumpyVoidVector {
         // Simple constructor with no data created
         NumpyVoidVector()  throw (const char *) {
             // DONT FORGET THIS!!!!
-            import_array();
+            init_numpy();
 
             mArray=NULL;
             // This will zero everything since array is not created
@@ -136,7 +141,7 @@ class NumpyVoidVector {
 
         NumpyVoidVector(PyObject* obj)  throw (const char *) {
             // DONT FORGET THIS!!!!
-            import_array();
+            init_numpy();
 
             mArray=NULL;
             // Get the data.  This may or may not make a copy.
@@ -150,7 +155,7 @@ class NumpyVoidVector {
         NumpyVoidVector(
                 const char* dtype, PyObject* obj)  throw (const char *) {
             // DONT FORGET THIS!!!!
-            import_array();
+            init_numpy();
 
             // Get the data.  This may or may not make a copy.
             mArray=NULL;
@@ -160,7 +165,7 @@ class NumpyVoidVector {
         NumpyVoidVector(
                 const std::string& dtype, PyObject* obj)  throw (const char *) {
             // DONT FORGET THIS!!!!
-            import_array();
+            init_numpy();
 
             // Get the data.  This may or may not make a copy.
             mArray=NULL;
@@ -171,7 +176,7 @@ class NumpyVoidVector {
         NumpyVoidVector(
                 const char* dtype, npy_intp size)  throw (const char *) {
             // DONT FORGET THIS!!!!
-            import_array();
+            init_numpy();
 
             // Get the data.  This may or may not make a copy.
             mArray=NULL;
@@ -181,7 +186,7 @@ class NumpyVoidVector {
         NumpyVoidVector(
                 const std::string& dtype, npy_intp size)  throw (const char *) {
             // DONT FORGET THIS!!!!
-            import_array();
+            init_numpy();
 
             // Get the data.  This may or may not make a copy.
             mArray=NULL;
@@ -198,7 +203,7 @@ class NumpyVoidVector {
         NumpyVoidVector(
                 PyArray_Descr* descr, PyObject* obj)  throw (const char *) {
             // DONT FORGET THIS!!!!
-            import_array();
+            init_numpy();
 
             // Get the data.  This may or may not make a copy.
             mArray=NULL;
@@ -209,7 +214,7 @@ class NumpyVoidVector {
         NumpyVoidVector(
                 PyArray_Descr* descr, npy_intp size) throw (const char *) {
             // DONT FORGET THIS!!!!
-            import_array();
+            init_numpy();
 
             // create a new array from the size and type info
             mArray=NULL;
@@ -516,7 +521,7 @@ class NumpyVoidVector {
 
             // We need to generate a PyArray_Descr* from this
             // string.  Don't forget to decref this
-            PyObject* pyobj_dtype= PyString_FromString(dtype);
+            PyObject* pyobj_dtype= Py_BuildValue("s", dtype);
 
             PyArray_Descr* descr;
             if (!PyArray_DescrConverter(pyobj_dtype, &descr)) {

@@ -1,7 +1,17 @@
 #include "cnumpydb.h"
 
-NumpyDB::NumpyDB() throw (const char*) {
+/*
+   we need this because someone made the import_array macro return a value
+   in python 3.  WTF?
+*/
+
+int *init_numpy(void) {
     import_array();
+    return NULL;
+}
+
+NumpyDB::NumpyDB() throw (const char*) {
+    init_numpy();
 
     // don't set this in set_defaults, we want it to persist
     mVerbosity=0;
@@ -13,7 +23,7 @@ NumpyDB::NumpyDB(
         PyObject* pyobj_db_open_flags) throw (const char*) {
 
     // DONT FORGET THIS!!!!
-    import_array();
+    init_numpy();
 
     // don't set this in set_defaults, we want it to persist
     mVerbosity=0;
@@ -1357,6 +1367,7 @@ void NumpyDB::extract_args(
 }
 
 
+/*
 string NumpyDB::extract_string(PyObject* pyobj, const char* name) throw (const char*) {
 
     if (!PyString_Check(pyobj)) {
@@ -1367,13 +1378,45 @@ string NumpyDB::extract_string(PyObject* pyobj, const char* name) throw (const c
     string s = PyString_AsString(pyobj);
     return s;
 }
+*/
+
+string NumpyDB::extract_string(PyObject* obj, const char* name) throw (const char*) {
+
+    string s;
+
+    if (PyBytes_Check(obj)) {
+        s = PyBytes_AsString(obj);
+    } else {
+        PyObject* format=NULL;
+        PyObject* tmpobj1=NULL;
+        PyObject* tmpobj2=NULL;
+        PyObject* args=NULL;
+
+        format = Py_BuildValue("s","%s");
+
+        // this is not a string object
+        args=PyTuple_New(1);
+
+        PyTuple_SetItem(args,0,obj);
+        tmpobj2 = PyUnicode_Format(format, args);
+        tmpobj1 = PyObject_CallMethod(tmpobj2,"encode",NULL);
+
+        Py_XDECREF(args);
+        Py_XDECREF(tmpobj2);
+
+        s = PyBytes_AsString(tmpobj1);
+        Py_XDECREF(tmpobj1);
+        Py_XDECREF(format);
+    }
+
+    return s;
+}
+
 
 long long NumpyDB::extract_longlong(
         PyObject* pyobj, const char* name) throw (const char*) {
     long long val=0;
-    if (PyInt_Check(pyobj)) {
-        val = (long long) PyInt_AsLong(pyobj);
-    } else if (PyLong_Check(pyobj)) {
+    if (PyLong_Check(pyobj)) {
         val = (long long) PyLong_AsLongLong(pyobj);
     } else {
         stringstream err;
