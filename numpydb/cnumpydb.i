@@ -6,7 +6,7 @@
 //%feature("kwargs");
 
 // must you declare with throw (const char *)?
-%typemap(throws) const char * %{
+%typemap(throws) (const char *) %{
     PyErr_SetString(PyExc_RuntimeError, $1);
     SWIG_fail;
 %}
@@ -41,6 +41,8 @@ enum NUMPYDB_RETURN_TYPE {
 };
 
 
+%include cnumpydb.h
+/*
 class NumpyDB {
     public:
         NumpyDB() throw (const char*);
@@ -129,4 +131,4 @@ class NumpyDB {
         PyObject* test(PyObject* obj);
 };
 
-
+*/

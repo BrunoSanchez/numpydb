@@ -10,6 +10,40 @@ int *init_numpy(void) {
     return NULL;
 }
 
+static string extract_string(PyObject* obj, const char* name) {
+
+    string s;
+
+    if (PyBytes_Check(obj)) {
+        s = PyBytes_AsString(obj);
+    } else {
+        PyObject* format=NULL;
+        PyObject* tmpobj1=NULL;
+        PyObject* tmpobj2=NULL;
+        PyObject* args=NULL;
+
+        format = Py_BuildValue("s","%s");
+
+        // this is not a string object
+        args=PyTuple_New(1);
+
+        PyTuple_SetItem(args,0,obj);
+        tmpobj2 = PyUnicode_Format(format, args);
+        tmpobj1 = PyObject_CallMethod(tmpobj2,"encode",NULL);
+
+        Py_XDECREF(args);
+        Py_XDECREF(tmpobj2);
+
+        s = PyBytes_AsString(tmpobj1);
+        Py_XDECREF(tmpobj1);
+        Py_XDECREF(format);
+    }
+
+    return s;
+}
+
+
+
 NumpyDB::NumpyDB() throw (const char*) {
     init_numpy();
 
@@ -328,6 +362,7 @@ void NumpyDB::get_meta_data() throw (const char*) {
         stringstream ss;
         ss<<"DB does not exist: "<<mDBFile<<". Use the create() method "
             <<"to create the database";
+        cerr<<ss.str()<<"\n";
         throw ss.str().c_str();
     }
 
@@ -1360,14 +1395,8 @@ void NumpyDB::extract_args(
         PyObject* pyobj_dbfile, 
         PyObject* pyobj_db_open_flags) throw (const char*) {
 
-    cout << "getting filename\n";
     this->mDBFile = extract_string(pyobj_dbfile, "file_name");
-    cout << "done filename\n";
-    cout << "fname: " << this->mDBFile << "\n";
-    cout << "getting open flags\n";
     this->mDBOpenFlags = extract_longlong(pyobj_db_open_flags,"db_open_flags");
-    cout << "done flags\n";
-
 
 }
 
@@ -1384,39 +1413,6 @@ string NumpyDB::extract_string(PyObject* pyobj, const char* name) throw (const c
     return s;
 }
 */
-
-string NumpyDB::extract_string(PyObject* obj, const char* name) throw (const char*) {
-
-    string s;
-
-    if (PyBytes_Check(obj)) {
-        s = PyBytes_AsString(obj);
-    } else {
-        PyObject* format=NULL;
-        PyObject* tmpobj1=NULL;
-        PyObject* tmpobj2=NULL;
-        PyObject* args=NULL;
-
-        format = Py_BuildValue("s","%s");
-
-        // this is not a string object
-        args=PyTuple_New(1);
-
-        PyTuple_SetItem(args,0,obj);
-        tmpobj2 = PyUnicode_Format(format, args);
-        tmpobj1 = PyObject_CallMethod(tmpobj2,"encode",NULL);
-
-        Py_XDECREF(args);
-        Py_XDECREF(tmpobj2);
-
-        s = PyBytes_AsString(tmpobj1);
-        Py_XDECREF(tmpobj1);
-        Py_XDECREF(format);
-    }
-
-    return s;
-}
-
 
 long long NumpyDB::extract_longlong(
         PyObject* pyobj, const char* name) throw (const char*) {

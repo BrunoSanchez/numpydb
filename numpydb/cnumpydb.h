@@ -219,6 +219,7 @@ class NumpyDB {
 
         PyObject* test(PyObject* obj);
     private:
+
         //
         // private methods
         //
@@ -284,9 +285,9 @@ class NumpyDB {
 
 
         // extract a stl string from the py object
-        string extract_string(
-                PyObject* pyobj, 
-                const char* name) throw (const char*);
+        //string extract_string(
+        //        PyObject* pyobj, 
+        //        const char* name) throw (const char*);
         // Extract an int from a py int or py long
         long long extract_longlong(
                 PyObject* pyobj, const char* name) throw (const char *);

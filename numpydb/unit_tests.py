@@ -13,24 +13,14 @@ def test_smoke():
     with tempfile.TemporaryDirectory() as tmpdir:
         fname = os.path.join(tmpdir, 'test.db')
 
-        numpydb.create(fname, 'i4', 'i4')
+        db = numpydb.create(fname, 'i4', 'i4')
 
-        db = numpydb.Open(fname, mode='r+')
-
-        # create the databases
         n = 10
         data = numpy.arange(n, dtype='i4')
         keys = numpy.arange(n, dtype='i4')
 
         db.put(keys, data)
         db.close()
-        del db
-
-
-        # now open for reading and tests
-        db = numpydb.Open(fdbfile)
-        return
-
 
 def test_range():
 
@@ -47,26 +37,13 @@ def test_range():
         f = numpy.arange(n, dtype='f8')
         i = numpy.arange(n, dtype='i4')
 
-        numpydb.create(fdbfile, "f8", "i4")
-        numpydb.create(idbfile, "i4", "i4")
+        dbf8 = numpydb.create(fdbfile, "f8", "i4")
+        dbi4 = numpydb.create(idbfile, "i4", "i4")
 
-        db = numpydb.Open(fdbfile, "r+")
-        db.put(f, i)
-        db.close()
-        del db
+        dbf8.put(f, i)
+        dbi4.put(i, i)
 
-        db = numpydb.Open(idbfile, "r+")
-        db.put(i, i)
-        db.close()
-        del db
-
-        # now open for reading and tests
-        fdb = numpydb.Open(fdbfile)
-        return
-        idb = numpydb.Open(idbfile)
-
-
-        dbs = [fdb, idb]
+        dbs = [dbf8, dbi4]
         types = ['float', 'int']
 
         for i in range(2):
@@ -138,7 +115,8 @@ def test_range():
             keys, data = db.range(low, high, '()', select='both')
 
             colprint(keys, data, format='%15s')
-
+        dbf8.close()
+        dbi4.close()
 
 def test_range1():
 
