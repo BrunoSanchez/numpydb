@@ -25,6 +25,6 @@ Purpose:
 
 """
 
-import numpydb
-from numpydb import *
-import unit_tests
+from . import numpydb
+from .numpydb import *
+from . import unit_tests

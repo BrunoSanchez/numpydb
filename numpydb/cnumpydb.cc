@@ -1360,8 +1360,13 @@ void NumpyDB::extract_args(
         PyObject* pyobj_dbfile, 
         PyObject* pyobj_db_open_flags) throw (const char*) {
 
-    mDBFile = extract_string(pyobj_dbfile, "file_name");
-    mDBOpenFlags = extract_longlong(pyobj_db_open_flags,"db_open_flags");
+    cout << "getting filename\n";
+    this->mDBFile = extract_string(pyobj_dbfile, "file_name");
+    cout << "done filename\n";
+    cout << "fname: " << this->mDBFile << "\n";
+    cout << "getting open flags\n";
+    this->mDBOpenFlags = extract_longlong(pyobj_db_open_flags,"db_open_flags");
+    cout << "done flags\n";
 
 
 }

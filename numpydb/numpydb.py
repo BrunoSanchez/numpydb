@@ -1,40 +1,34 @@
 """
-Module:
-    numpydb
-Purpose:
+This module contains a class NumpyDB that Facilitates writing and reading
+of numpy arrays to and from Berkeley db databases.
 
-    This module contains a class NumpyDB that Facilitates writing and reading
-    of numpy arrays to and from Berkeley db databases.  
+Berkeley db is a key-value store.  A use for this module is to make the
+"keys" of this database the values from a large set of data, and then
+make the "values" indices into the original data.  Because the database
+stores the keys in a b-tree, it is very fast to search and return the
+indices needed to extract subsets from the larger dataset.
 
-    Berkeley db is a key-value store.  A use for this module is to make the
-    "keys" of this database the values from a large set of data, and then
-    make the "values" indices into the original data.  Because the database
-    stores the keys in a b-tree, it is very fast to search and return the
-    indices needed to extract subsets from the larger dataset.  
+This module contains the following functions and classes:
 
-    This module contains the following functions and classes:
+    Classes:
+        NumpyDB: The class that implements database access.
 
-        Classes:
-            NumpyDB: The class that implements database access.
+    Helper functions:
+        Open(dbfile, mode='r'):  Just returns NumpyDB(dbfile, mode=mode)
+        create():  Create a new database.
 
-        Helper functions:
-            Open(dbfile, mode='r'):  Just returns NumpyDB(dbfile, mode=mode)
-            create():  Create a new database.
-
-    For more info, see the documentation for each individual class/method.
-
-
+For more info, see the documentation for each individual class/method.
 """
-import cnumpydb
-import numpy
+
+from . import cnumpydb
 import os
 
 # create if it doesn't exist, allow writing
-DB_CREATE   = 1
+DB_CREATE = 1
 # Error if it already exists. How to use this?
-DB_EXCL     = 4096
+DB_EXCL = 4096
 # read only
-DB_RDONLY   = 16
+DB_RDONLY = 16
 # delete any data in the table if exists
 DB_TRUNCATE = 128
 
@@ -52,7 +46,7 @@ mode_dict['a+'] = DB_CREATE
 mode_dict['w'] = DB_CREATE | DB_TRUNCATE
 mode_dict['w+'] = DB_CREATE | DB_TRUNCATE
 
-interval_dict={}
+interval_dict = {}
 interval_dict['[]'] = cnumpydb.NUMPYDB_GE_LE
 interval_dict['[)'] = cnumpydb.NUMPYDB_GE_LT
 interval_dict['(]'] = cnumpydb.NUMPYDB_GT_LE
@@ -65,7 +59,7 @@ interval_dict['>='] = cnumpydb.NUMPYDB_GE
 interval_dict['<'] = cnumpydb.NUMPYDB_LT
 interval_dict['<='] = cnumpydb.NUMPYDB_LE
 
-select_dict={}
+select_dict = {}
 select_dict['values'] = cnumpydb.NUMPYDB_GETDATA
 select_dict['keys'] = cnumpydb.NUMPYDB_GETKEYS
 select_dict['both'] = cnumpydb.NUMPYDB_GETBOTH
@@ -91,7 +85,7 @@ def Open(dbfile, mode='r', verbose=False, verbosity=0):
     db = NumpyDB()
 
     if verbose:
-        verbosity=1
+        verbosity = 1
     db.set_verbosity(verbosity)
     db.open(dbfile, mode=mode)
     return db
@@ -111,7 +105,7 @@ def create(dbfile, key_dtype, data_dtype, verbosity=0):
         key_dtype: A string data type for the keys.  E.g.
             'i4', 'f8', 'S20', etc.
         data_dtype: A string data type for the values, or data in
-            the database.  
+            the database.
 
     Errors:
         Opon failure to create the database, or if the file
@@ -127,10 +121,13 @@ def create(dbfile, key_dtype, data_dtype, verbosity=0):
         >>> db = numpy.NumpyDB(dbfile, mode='r+')
     """
 
+    # note we will need to reopen
+
     db = NumpyDB()
     db.set_verbosity(verbosity)
     db.create(dbfile, key_dtype, data_dtype)
     del db
+
 
 class NumpyDB(cnumpydb.NumpyDB):
     """
@@ -143,21 +140,20 @@ class NumpyDB(cnumpydb.NumpyDB):
     Construction:
         db = NumpyDB()
         db = NumpyDB(dbfile, mode='r')
-        
+
         Inputs:
-            dbfile:  
+            dbfile:
                 A python string representing the database file.  If the file
                 does not exist, an error is raised.  To create a new database,
                 instantiate with no arguments and use the create() method, or
                 use the create() helper function.
 
-            mode: 
+            mode:
                 The mode for opening the file.   Default is read only, 'r'
                     'r': Open read only
                     'r+': Open for reading and updating.
-                    'w': Truncate the database and open for reading and 
+                    'w': Truncate the database and open for reading and
                          updating.
-                         
 
         Examples of Construction and Creation
             # creating a database with keys strings of length 20
@@ -197,15 +193,15 @@ class NumpyDB(cnumpydb.NumpyDB):
             >>> import numpydb
             >>> db = numpydb.NumpyDB('somefile.db')
 
-            # Extract exact key matches from the database.  Can 
+            # Extract exact key matches from the database.  Can
             # be scalar, sequence, or array
             >>> values = db.match(values)
-            
+
             # Extract from a range of keys, using default inclusive interval
             # [low,high].   Note between and range are synonyms
             >>> values = db.between(low, high)
             >>> values = db.range(low, high)
-            
+
             # Extract from different types of intervals.  Again, note range()
             # is synonymous with between
             >>> values = db.between(low, high,'[]')
@@ -286,12 +282,12 @@ class NumpyDB(cnumpydb.NumpyDB):
 
     """
     def __init__(self, dbfile=None, mode='r'):
-        self.between=self.range
-        self._dbfile=self.expand_filename(dbfile)
-        self._mode=mode
+        self.between = self.range
+        self._dbfile = _expand_filename(dbfile)
+        self._mode = mode
         cnumpydb.NumpyDB.__init__(self)
         if self._dbfile is not None:
-            self.open(dbfile,mode)
+            self.open(dbfile, mode)
 
     def create(self, dbfile, key_dtype, data_dtype):
         """
@@ -310,7 +306,7 @@ class NumpyDB(cnumpydb.NumpyDB):
             >>> db.create(dbfile, key_dtype, data_dtype)
 
         Inputs:
-            dbfile: 
+            dbfile:
                 A python string holding the database file name.  The file must
                 already exist.  To create a database, use the .create() method.
             key_dtype: A numpy data type string for the key values.  This type
@@ -325,7 +321,7 @@ class NumpyDB(cnumpydb.NumpyDB):
             e.g. arrays with fields.
 
                 Signed integer types:
-                    'i1','i2','i4','i8',   
+                    'i1','i2','i4','i8',
                 Unsigned integer types:
                     'u1','u2','u4','u8'
                 Floating point types:
@@ -335,7 +331,7 @@ class NumpyDB(cnumpydb.NumpyDB):
 
         """
 
-        dbfile = self.expand_filename(dbfile)
+        dbfile = _expand_filename(dbfile)
         cnumpydb.NumpyDB.create(self, dbfile, key_dtype, data_dtype)
 
     def open(self, dbfile, mode='r'):
@@ -355,20 +351,20 @@ class NumpyDB(cnumpydb.NumpyDB):
 
         Inputs:
 
-            dbfile: 
+            dbfile:
                 A python string holding the database file name.  The file must
                 already exist.  To create a database, use the .create() method.
             mode: Mode for opening the database.  Default is 'r'.
                     'r': Open read only
                     'r+': Open for reading and updating.
-                    'w': Truncate the database and open for reading and 
+                    'w': Truncate the database and open for reading and
                          updating.
 
         """
         if mode not in mode_dict:
             raise ValueError("Don't know how to open with mode: '%s'" % mode)
-        
-        self._dbfile = self.expand_filename(dbfile)
+
+        self._dbfile = _expand_filename(dbfile)
         self._mode = mode
         self._open_flags = mode_dict[mode]
 
@@ -386,7 +382,7 @@ class NumpyDB(cnumpydb.NumpyDB):
             >>> db.close()
         """
         cnumpydb.NumpyDB.close(self)
-    
+
     def __del__(self):
         self.close()
 
@@ -417,7 +413,6 @@ class NumpyDB(cnumpydb.NumpyDB):
                 values data type.  Must be the same length as the keys.
         """
         cnumpydb.NumpyDB.put(self, keys, values)
-
 
     def range(self, low, high, interval='[]', select='values'):
         """
@@ -466,7 +461,7 @@ class NumpyDB(cnumpydb.NumpyDB):
             >>> values = db.range(None, high,'<')
             >>> values = db.range(None, high,'<=')
 
-            # you can also test for equality, but this is better done using 
+            # you can also test for equality, but this is better done using
             # the match() method
             >>> values = db.range(value,None,'=')
 
@@ -480,14 +475,16 @@ class NumpyDB(cnumpydb.NumpyDB):
             >>> count = db.between(low,high,select='count')
 
         Inputs:
-            low: 
-                the lower end of the range.  Must be convertible to the key data
-                type.  Can be None if you are doing < or <= queries.
+            low:
+                the lower end of the range.  Must be convertible to
+                the key data type.  Can be None if you are
+                doing < or <= queries.
 
-            high: 
-                the upper end of the range.  Must be convertible to the key data
-                type. Can be None if doing >, >=, or == queries, although note
-                for equality it is better to use the match() method.
+            high:
+                the upper end of the range.  Must be convertible
+                to the key data type. Can be None if doing >, >=,
+                or == queries, although note for equality it
+                is better to use the match() method.
 
         Optional Inputs:
             interval:
@@ -518,11 +515,10 @@ class NumpyDB(cnumpydb.NumpyDB):
 
         if interval not in interval_dict:
             raise ValueError("Bad interval indicator: '%s'" % interval)
-        query_type=interval_dict[interval]
+        query_type = interval_dict[interval]
 
-        #return cnumpydb.NumpyDB.between(self, low, high, return_type)
-        return cnumpydb.NumpyDB.range_generic(self, 
-                                              low, high, 
+        return cnumpydb.NumpyDB.range_generic(self,
+                                              low, high,
                                               query_type, return_type)
 
     def range1(self, keyval, interval, select='values'):
@@ -551,7 +547,7 @@ class NumpyDB(cnumpydb.NumpyDB):
             >>> values = db.range1(high,'<')
             >>> values = db.range1(high,'<=')
 
-            # you can also test for equality, but this is better done using 
+            # you can also test for equality, but this is better done using
             # the match() method
             >>> values = db.range1(value,'=')
 
@@ -565,7 +561,7 @@ class NumpyDB(cnumpydb.NumpyDB):
             >>> count = db.range1(value,select='count')
 
         Inputs:
-            key: 
+            key:
                 A bound to use in the one sided range query.
             interval:
                 '>': One sided open
@@ -590,20 +586,19 @@ class NumpyDB(cnumpydb.NumpyDB):
             raise ValueError("Bad selection indicator: '%s'" % select)
         return_type = select_dict[select]
 
-        if interval not in ['>','>=','<','<=','=']:
+        if interval not in ['>', '>=', '<', '<=', '=']:
             raise ValueError("Bad interval indicator: '%s'" % interval)
-        query_type=interval_dict[interval]
+        query_type = interval_dict[interval]
 
-        if interval in ['>','>=','=']:
-            low=keyval
-            high=None
+        if interval in ['>', '>=', '=']:
+            low = keyval
+            high = None
         else:
-            high=keyval
-            low=None
+            high = keyval
+            low = None
 
-
-        return cnumpydb.NumpyDB.range_generic(self, 
-                                              low, high, 
+        return cnumpydb.NumpyDB.range_generic(self,
+                                              low, high,
                                               query_type, return_type)
 
     def match(self, keys2match, select='values'):
@@ -644,7 +639,7 @@ class NumpyDB(cnumpydb.NumpyDB):
             keys2match:
                 A scalar, sequence, or array of keys to match.  All entries
                 that have keys matching any of the entered values are returned.
-                Must be convertible to the key data type. 
+                Must be convertible to the key data type.
 
                 Note, these values should be *unique*, otherwise you'll get
                 duplicates returned.
@@ -665,11 +660,9 @@ class NumpyDB(cnumpydb.NumpyDB):
             raise ValueError("Bad selection indicator: '%s'" % select)
         return_type = select_dict[select]
 
-        # this functionality is in range_generic as well but 
+        # this functionality is in range_generic as well but
         # we gain 5% speed using this version
         return cnumpydb.NumpyDB.match(self, keys2match, return_type)
-
-
 
     def print_nrecords(self, num):
         """
@@ -686,8 +679,8 @@ class NumpyDB(cnumpydb.NumpyDB):
 
             >>> db.print_nrecords(10)
 
-        """ 
-        num2send = long(num)
+        """
+        num2send = int(num)
         cnumpydb.NumpyDB.print_nrecords(self, num2send)
 
     def set_verbosity(self, verbosity):
@@ -705,9 +698,9 @@ class NumpyDB(cnumpydb.NumpyDB):
             >>> db=numpydb.NumpyDB('somefile.db')
             >>> db.print_nrecords(10)
 
-        """ 
+        """
 
-        verbosity = long(verbosity)
+        verbosity = int(verbosity)
         cnumpydb.NumpyDB.set_verbosity(self, verbosity)
 
     def file_name(self):
@@ -760,11 +753,9 @@ class NumpyDB(cnumpydb.NumpyDB):
 
         return cnumpydb.NumpyDB.data_dtype(self)
 
-
-
     def __repr__(self):
-        fname=self.file_name()
-        key_dtype=self.key_dtype()
+        fname = self.file_name()
+        key_dtype = self.key_dtype()
         data_dtype = self.data_dtype()
         mode = self._mode
         s = []
@@ -774,7 +765,7 @@ class NumpyDB(cnumpydb.NumpyDB):
             s += ["    key dtype:  '%s'" % key_dtype]
         if data_dtype != "":
             s += ["    data dtype: '%s'" % data_dtype]
-        if mode != "" and mode != None:
+        if mode != "" and mode is not None:
             s += ["    mode:       '%s'" % mode]
 
         if len(s) > 0:
@@ -782,12 +773,9 @@ class NumpyDB(cnumpydb.NumpyDB):
         s = '\n'.join(s)
         return s
 
-    def expand_filename(self, name):
-        if name is None:
-            return name
-        newname = os.path.expanduser(name)
-        newname = os.path.expandvars(newname)
-        return newname
-
-
-
+def _expand_filename(name):
+    if name is None:
+        return name
+    newname = os.path.expanduser(name)
+    newname = os.path.expandvars(newname)
+    return newname
